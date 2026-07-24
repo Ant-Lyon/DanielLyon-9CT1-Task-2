@@ -1,6 +1,3 @@
-# DanielLyon-9CT1-Task-2
-
-```lua
 local x = 10
 
 local function printSomething(sentence)
@@ -14,4 +11,3 @@ elseif x < 5 then
 else
     print(`Brandon has {x} friends`) -- string interpolation
 end
-```
