@@ -15,3 +15,35 @@ In my home when I enter my bedroom, I never know if it will be the same. Either 
 ### Test cases
 
 ### Non-functional requirements
+
+FROM threading IMPORT Thread
+IMPORT time
+
+BEGIN laserChecker
+    time.sleep(60)
+    IF lightDetector.online THEN
+        isLaserOn = True
+    ELSE
+        isLaserOn = False
+    ENDIF
+END laserChecker
+
+BEGIN
+    thread = Thread(target=laserChecker)
+    thread.start()
+
+    WHILE isLaserOn
+    time.sleep(0.02)
+    IF lightDetector.online THEN
+        isLaserOn = True
+    ELSE
+        isLaserOn = False
+    ENDIF
+    ENDWHILE
+
+    
+
+
+
+    IF not isLaserOn THEN
+    
