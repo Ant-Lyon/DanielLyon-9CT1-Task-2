@@ -17,6 +17,7 @@ In my home when I enter my bedroom, I never know if it will be the same. Either 
 ### Non-functional requirements
 
 FROM threading IMPORT Thread # https://docs.python.org/3/library/threading.html
+FROM machine IMPORT Pin
 IMPORT time
 
 BEGIN logTime(logType)
@@ -35,8 +36,42 @@ BEGIN statusLogThread
 END statusLogThread
 
 BEGIN userInputThread
-    WHILE True
-        time.sleep_ms(10)
+    # Button creation below:
+    SET button1 TO pin AS input (PULL_DOWN)
+    SET button2 TO pin AS input (PULL_DOWN)
+    SET button3 TO pin AS input (PULL_DOWN)
+    SET button4 TO pin AS input (PULL_DOWN)
+    SET button5 TO pin AS input (PULL_DOWN)
+    SET button6 TO pin AS input (PULL_DOWN)
+    SET button7 TO pin AS input (PULL_DOWN)
+    SET button8 TO pin AS input (PULL_DOWN)
+    SET button9 TO pin AS input (PULL_DOWN)
+
+    WHILE True DO
+        WAIT 10ms
+        IF READ button1 == 1 THEN
+            passwordString ADD "1"
+        ELSE IF READ button2 == 1 THEN
+            passwordString ADD "2"
+        ELSE IF READ button3 == 1 THEN
+            passwordString ADD "3"
+        ELSE IF READ button4 == 1 THEN
+            passwordString ADD "4"
+        ELSE IF READ button5 == 1 THEN
+            passwordString ADD "5"
+        ELSE IF READ button6 == 1 THEN
+            passwordString ADD "6"
+        ELSE IF READ button7 == 1 THEN
+            passwordString ADD "7"
+        ELSE IF READ button8 == 1 THEN
+            passwordString ADD "8"
+        ELSE IF READ button9 == 1 THEN
+            passwordString ADD "9"
+        ENDIF
+    
+        IF "123456" IN passwordString THEN
+            # Turn off the system idk
+        ENDIF
 
 BEGIN buzz(action) # Different sounds from different situations
     IF action == "doorAlarm" THEN
@@ -60,21 +95,20 @@ END buzzerThread
 
 
 
-
 BEGIN
     SET isLaserClear TO True
+    SET passwordString TO ""
     SET laser TO pin AS output
-    WRITE laser TO HIGH
-    SET lightDetector TO pin AS input 
+    SET lightDetector TO pin AS input
     SET buzzer TO pin AS output
-    START Thread (statusLogThread)
-    thread(target=statusLogThread).start()
+    START thread statusLogThread
+    START thread userInputThread
 
-
+    WRITE laser TO HIGH
     WHILE True DO
         WHILE isLaserClear == True DO # Checks if the laser is clear or blocked
-            WAIT 10 ms
-            IF READ (lightDetector) == False THEN
+            WAIT 10 seconds
+            IF READ lightDetector == 0 THEN
                 SET isLaserClear TO False
             ENDIF
         ENDWHILE
@@ -82,25 +116,15 @@ BEGIN
         WRITE laser to LOW
         CALL buzzerFunc WITH "doorAlarm"
         CALL logTime WITH "laser"
-        ENDWHILE
 
         WHILE isLaserClear == False DO # Checks if the laser can work again
-            time.sleep(5) # Allows time to see the laser is visably off
-            laser.online()
-            time.sleep_ms(10) # Time for the light detector to detect the laser
-            IF lightDetector.offline THEN
-                laser.offline()
-            ELSE IF lightDetector.online THEN
-                isLaserClear = True
+            WAIT 5 seconds # Allows time to see the laser is visably off
+            WRITE laser TO HIGH
+            WAIT 100 ms # Time for the light detector to detect the laser
+            IF READ lightDetector == 0 THEN
+                WRITE laser TO LOW
+            ELSE IF READ lightDetector == 1 THEN
+                SET isLaserClear TO True # leaves the laser on for the next iteration in the external loop
             ENDIF
         ENDWHILE
     ENDWHILE
-
-
-
-    
-
-
-
-    IF not isLaserOn THEN
-    
