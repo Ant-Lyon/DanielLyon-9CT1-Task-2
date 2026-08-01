@@ -77,23 +77,21 @@ BEGIN buzz(action) # Different sounds from different situations
     IF action == "doorAlarm" THEN
         FOR i = 0 TO 2 STEP 1 # Loops 3 times
             WRITE buzzer TO HIGH (0.2secs, lowSound)
-            time.sleep(0.1)
+            WAIT 0.2 secs
         NEXT i
     ELSE IF action == "armingLaser" THEN
-        WRITE buzzer TO HIGH (0.2, lowSound)
-        time.sleep(0.1)
+        WRITE buzzer TO HIGH (0.2secs, lowSound)
+        WAIT 0.2 secs
         WRITE buzzer TO HIGH (0.2secs, middleSound)
-        time.sleep(0.1)
+        WAIT 0.2 secs
         WRITE buzzer TO HIGH (0.2secs, highSound)
     ELSE IF action == "disarmingLaser" THEN
         WRITE buzzer TO HIGH (0.2secs, highSound)
-        time.sleep(0.1)
+        WAIT 0.2 secs
         WRITE buzzer TO HIGH (0.2secs, middleSound)
-        time.sleep(0.1)
+        WAIT 0.2 secs
         WRITE buzzer TO HIGH (0.2secs, lowSound)
 END buzzerThread
-
-
 
 BEGIN
     SET isLaserClear TO True
