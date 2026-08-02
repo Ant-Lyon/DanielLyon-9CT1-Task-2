@@ -24,7 +24,7 @@ BEGIN logTime(logType)
     IF stopSystem == False THEN
         IF logType == "laserBlocked" THEN
             SET doorLog TO OPEN 'LogFiles\DoorLog.txt' (mode=append)
-            TO doorLog WRITE f"Door CLOSED at {time}\n"
+            TO doorLog WRITE f"Door OPENED at {time}\n"
             CLOSE doorLog
         ELSE IF logType == "laserClear" THEN
             SET doorLog TO OPEN 'LogFiles\DoorLog.txt' (mode=append)
@@ -101,7 +101,7 @@ BEGIN userInputThread
             WRITE laser TO LOW # Turns off device, now there's no risk it will turn back on
         ENDIF
 
-BEGIN buzz(action) # Different sounds from different situations
+BEGIN buzz(action) # Different sounds for different situations
     IF action == "doorAlarm" THEN
         FOR i = 0 TO 2 STEP 1 # Loops 3 times
             WRITE buzzer TO HIGH (0.2secs, lowSound)
@@ -138,7 +138,7 @@ BEGIN
             WAIT 5 seconds
             IF READ lightDetector == 0 THEN
                 WRITE laser to LOW
-                CALL buzzerFunc WITH "doorAlarm"
+                CALL buzz WITH "doorAlarm"
                 CALL logTime WITH "laserBlocked"
                 SET isLaserClear TO False
             ENDIF
