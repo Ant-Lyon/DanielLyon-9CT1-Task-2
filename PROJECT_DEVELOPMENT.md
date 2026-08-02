@@ -4,7 +4,7 @@
 ### Defining the purpose
 **The need**
 
-In my home when I enter my bedroom, I never know if it will be the same. Either my hairbrush's gone, my books are on the floor, or, *I shudder to think*, my bedroom's suddenly.. TIDY?! Unacceptable! However whenever I inquire, it's always "When?" or "No I didn't" or some other unhelpful, error deflecting response. Therefore I need something to help me keep track of when my bedroom is entered, so I can see at what time it happened and hopefully find out the deadbeat who commited this blunder. Using evidence like living room cameras which stretch to my door, this shouldn't be too much of an issue.
+In my home when I enter my bedroom, I never know if it will be the same. Either my hairbrush's gone, my books are on the floor, or, *I shudder to think*, my bedroom's suddenly.. TIDY?! Unacceptable! However whenever I inquire, it's always "When?" or "No I didn't" or some other unhelpful, error deflecting response. Therefore I need something to help me keep track of when my bedroom is entered, so I can see at what time it happened and hopefully find out the deadbeat who commited this blunder. Using evidence like living room cameras which stretch to my door, this shouldn't be large of a case to crack.
 
 **Proposed solution**
 
@@ -21,19 +21,42 @@ FROM machine IMPORT Pin
 IMPORT time
 
 BEGIN logTime(logType)
-    IF logType == "laser" THEN
-        #log the laser idk
-    ELSE IF logType == "status" THEN
-        #log the status idk
+    IF stopSystem == False THEN
+        IF logType == "laserBlocked" THEN
+            SET doorLog TO OPEN 'LogFiles\DoorLog.txt' (mode=append)
+            TO doorLog WRITE f"Door CLOSED at {time}\n"
+            CLOSE doorLog
+        ELSE IF logType == "laserClear" THEN
+            SET doorLog TO OPEN 'LogFiles\DoorLog.txt' (mode=append)
+            TO doorLog WRITE f"Door CLOSED at {time}\n"
+            CLOSE doorLog
+        ELSE IF logType == "status" THEN
+            SET statusLog TO OPEN 'Logfiles\StatusLog.txt' (mode=write)
+            TO statusLog WRITE f"{time} OPERATIONAL"
+            CLOSE statusLog
+        ELSE IF logType == "shutdown" THEN
+            SET statusLog TO OPEN 'LogFiles\StatusLog.txt' (mode=write)
+            TO statusLog WRITE f"{time} AUTHORISED SHUTDOWN"
+            CLOSE statusLog
+        ENDIF
     ENDIF
 END logTime
 
 BEGIN statusLogThread
-    WHILE True DO
+    WHILE stopSystem == False DO
         logTime("status")
         Pause 60 seconds
     ENDWHILE
 END statusLogThread
+
+START turnOn(device, tone=None) # This method is to make sure no devices turn on again 
+    IF stopSystem == False THEN
+        IF device == "laser" THEN
+            WRITE laser TO low
+        ELSE IF device == "buzzer" THEN
+            WRITE buzzer TO HIGH (tone)
+        ENDIF
+    ENDIF
 
 BEGIN userInputThread
     # Button creation below:
@@ -70,7 +93,12 @@ BEGIN userInputThread
         ENDIF
     
         IF "123456" IN passwordString THEN
-            # Turn off the system idk
+            logTime(shutdown)
+            WHILE doorLog.closed == False OR statusLog.closed == False DO
+                WAIT 20 ms
+            ENDWHILE
+            SET stopSystem TO True # Immediately prevents any further changes to external devices
+            WRITE laser TO LOW # Turns off device, now there's no risk it will turn back on
         ENDIF
 
 BEGIN buzz(action) # Different sounds from different situations
@@ -99,30 +127,36 @@ BEGIN
     SET laser TO pin AS output
     SET lightDetector TO pin AS input
     SET buzzer TO pin AS output
+    SET led TO pin AS output
+    SET stopSystem TO False # This is the only boolean I promise
     START thread statusLogThread
     START thread userInputThread
 
     WRITE laser TO HIGH
     WHILE True DO
-        WHILE isLaserClear == True DO # Checks if the laser is clear or blocked
-            WAIT 10 seconds
+        WHILE isLaserClear == True AND NOT stopSystem DO # Checks if the laser is clear or blocked
+            WAIT 5 seconds
             IF READ lightDetector == 0 THEN
+                WRITE laser to LOW
+                CALL buzzerFunc WITH "doorAlarm"
+                CALL logTime WITH "laserBlocked"
                 SET isLaserClear TO False
             ENDIF
         ENDWHILE
 
-        WRITE laser to LOW
-        CALL buzzerFunc WITH "doorAlarm"
-        CALL logTime WITH "laser"
-
-        WHILE isLaserClear == False DO # Checks if the laser can work again
+        WHILE isLaserClear == False AND NOT stopSystem DO # Checks if the laser can work again
             WAIT 5 seconds # Allows time to see the laser is visably off
             WRITE laser TO HIGH
             WAIT 100 ms # Time for the light detector to detect the laser
             IF READ lightDetector == 0 THEN
                 WRITE laser TO LOW
             ELSE IF READ lightDetector == 1 THEN
+                CALL logTime with "laserClear"
                 SET isLaserClear TO True # leaves the laser on for the next iteration in the external loop
             ENDIF
         ENDWHILE
+
+        IF stopSystem == True THEN
+            WAIT 1 second
+        ENDIF
     ENDWHILE
