@@ -4,7 +4,7 @@ import time
 
 isLaserClear = True
 passwordString = ""
-laser = Pin(16, Pin.OUT)
+laserPin = Pin(16, Pin.OUT)
 lightDetector = Pin(17, Pin.IN, Pin.PULL_DOWN)
 buzzer = Pin(18, Pin.OUT)
 led = Pin(19, Pin.OUT)
@@ -37,8 +37,8 @@ def statusLogThread():
 
 def turnOn(device):
     if not stopSystem:
-        if device == "laser":
-            laser.value(1)
+        if device == "laserPin":
+            laserPin.value(1)
         elif device == "buzzer":
             buzzer.value(1)
 
@@ -76,7 +76,7 @@ def userInputThread():
                 while not doorLog.closed and not statusLog.closed:
                     time.sleep_ms(20)
                 stopSystem = True
-                laser.value(0)
+                laserPin.value(0)
         while stopSystem:
             time.sleep_ms(20)
             if buttonMain.value() == 1:
@@ -84,22 +84,22 @@ def userInputThread():
             
             
 
-laser.value(1)
+laserPin.value(1)
 while True:
     while isLaserClear and not stopSystem:
         time.sleep(5)
         if lightDetector.value() == 0:
-            laser.value(0)
+            laserPin.value(0)
             buzz("doorAlarm")
             logTime("laserBlocked")
             isLaserClear = False
             
     while not isLaserClear and not stopSystem:
         time.sleep(5)
-        turnOn("laser")
+        turnOn("laserPin")
         time.sleep_ms(100)
         if lightDetector.value() == 0:
-            laser.value(0)
+            laserPin.value(0)
         elif lightDetector.value() == 1:
             logTime("laserClear")
             isLaserClear = True
