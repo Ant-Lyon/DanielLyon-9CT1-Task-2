@@ -34,7 +34,7 @@ BEGIN logTime(logType)
             SET statusLog TO OPEN 'Logfiles\StatusLog.txt' (mode=write)
             TO statusLog WRITE f"{time} OPERATIONAL"
             CLOSE statusLog
-        ELSE IF logType == "shutdown" THEN
+        ELSE IF logType == "shutdown" THEN # Maybe 'powerOn' for "SYSTEM PRIMED"
             SET statusLog TO OPEN 'LogFiles\StatusLog.txt' (mode=write)
             TO statusLog WRITE f"{time} AUTHORISED SHUTDOWN"
             CLOSE statusLog
