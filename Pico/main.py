@@ -106,4 +106,5 @@ while True:
     time.sleep_ms(20)
             
             
-            
+# Modules:
+# Passive buzzer, two colour LED, light dependant resistor, and RTC.
