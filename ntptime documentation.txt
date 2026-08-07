@@ -1,1 +1,0 @@
-https://docs.openmv.io/v5.0.0/library/ntptime.html#module-ntptime
