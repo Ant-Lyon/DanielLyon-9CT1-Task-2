@@ -46,9 +46,12 @@ elif moduleInput == 3:
         buzzer.duty_u16(0)
 
 elif moduleInput == 4:
-    VCC = Pin(21, Pin.OUT)
-    adcPin = ADC(Pin(22))
-    rawValue = adc_pin.read_u16()
+    laser = Pin(16, Pin.OUT)
+    laser.value(1) 
+    analogPin = ADC(Pin(26))
     while True:
-        print(rawValue)
+        LDRvalue = analogPin.read_u16()
+        print(LDRvalue)
         time.sleep_ms(100)
+    
+    
