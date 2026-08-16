@@ -63,13 +63,14 @@ time.sleep(0.5)
 tB.start()
 
 # The 'timeout' kwarg means after a period of time, the acquire will return False and move on;
-# If it is set to a negative value, no timeout will happen;
+# If it is set to a negative value, no timeout will happen, demonstrated in it's default value '-1';
 # It will only work when the 'blocking' kwarg is set to True. Else something bad will happen, but I haven't tested that nor have any intentions to whatsoever
 
 # You can use 'return' and 'sys.exit()' to exit a thread,
 # And '_thread.exit()' can also be used when using the '_thread' library. It is the exact same as 'sys_exit()'
 
-# Using 'with {lock}:' acquires the lock with default argument and as the 'finally:' clause releases the lock
+# Using 'with {lock}:' acquires the lock with the defaults, and as the 'finally:' clause it releases the lock;
+# This is safer because it releases the lock no matter what, for example in the event of an Error
 
 def threadC():
     with lock:
@@ -95,8 +96,11 @@ def threadFunction():
     time.sleep(3)
     lock.release() # Works the same
 
-_thread.start_new_thread(threadFunction, ()).start()
+_thread.start_new_thread(threadFunction, ()) # Starts immediately, it does not return anything
 
 # The 'with' clause doesn't exist in the '_thread' library.
 # In micropython, you cannot use the 'timeout' parameter. It will simple ignore it;
 # Nor can you use the '_thread.TIMEOUT_MAX' method, it doesn't exist on the micropython _thread library.
+
+lockStatus = lock.locked() # Checks if the lock is acquired - 'True', or released 'False'. Works for both 'threading' and '_thread'
+print(lockStatus)

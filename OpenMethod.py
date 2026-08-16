@@ -32,3 +32,11 @@ locale.getencoding() # Find your device's locale encoding (usually utf-8)
 
 # If it is say, "\r\n" (Windows default), it will only display that line ending,
 # and when you write any line ending it will convert it back to the one specified.
+
+
+# In micropython's 'open()' method, and the 'name' parameter stays an arg, but 'mode' becomes a kwarg;
+# The encoding kwarg does not exist on micropython.
+with open('workfile.txt', mode='r') as file:
+    print(file.read())
+
+# Fact: both CPython and Micropython's 'open()' method just alias 'io.open()', which is built into both languages.
