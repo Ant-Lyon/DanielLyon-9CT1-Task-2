@@ -49,6 +49,8 @@ def buzz(action): # Different buzzer noises for different scenarios
         time.sleep(0.5)
         buzzer.duty_u16(0)
 
+
+
 def userInputThread(): # Every 20ms it checks whether a button is being pressed and either turns off the device or preforms some other function
     buttonMain = Pin(14, Pin.INPUT, Pin.PULL_DOWN)
     button1 = Pin(10, Pin.INPUT, Pin.PULL_DOWN)
@@ -70,16 +72,15 @@ def userInputThread(): # Every 20ms it checks whether a button is being pressed 
         elif buttonMain.value() == 1:
             if passwordString[-4:] == "1234":
                 
-        if "1234" in passwordString:
-            with logLock:
-                logTime("shutdown")
-            while logLock.locked(): # Making sure not to turn off anything until the logs are complete. Not doing this could cause corruption
-                time.sleep_ms(20)
-            laserPin.value(0)
-            stopSystem = True # When stopSystem is True, it is safe to unplug the device
-        else:
-            buzz("incorrectPassword")
-            passwordString = ""
+                stopSystem = True # stopSystem will immediately stop any actuators, and cancel any threads and stop the main program
+                while statusLogThread.is_alive() and mainThreadActive:
+                    time.sleep(20) # Waits for up to 5.5 seconds
+                with logLock: # No need after everything is shut off but good practice
+                    logTime("shutdown")
+                
+            else:
+                buzz("incorrectPassword")
+                passwordString = ""
     while stopSystem:
         time.sleep_ms(20)
         if buttonMain.value() == 1:
@@ -102,11 +103,11 @@ timestamp = None
 passwordString = ""
 isLaserClear = True
 stopSystem = False
+mainThreadActive = True
 logLock = _thread.allocate_lock()
 buzzLock = _thread.allocate_lock()
 _thread.start_new_thread(statusLogThread, ())
-# _thread.start_new_thread(statusLogThread, ()) # Work on this later
-# _thread.start_new_thread(LD Rprint, ())
+# _thread.start_new_thread(statusLogThread, ())
 
 laserPin.value(1)
 time.sleep(0.5) # Time for the LDR to detect the laser
@@ -133,6 +134,8 @@ while True:
             isLaserClear = True
     
     if stopSystem: # 20 ms is so small it doesn't matter if it runs for no reason, but this if statement tells me what it does
+        mainThreadActive = False
+        laserPin.value(0)
         time.sleep_ms(20)
                     
             

@@ -16,15 +16,16 @@ if moduleInput == 1:
         time.sleep(1)        
     
 elif moduleInput == 2:
-    redLed = Pin(16, Pin.OUT)
-    greenLed = Pin(17, Pin.OUT)
+    greenLed = Pin(5, Pin.OUT)
+    redLed = Pin(4, Pin.OUT)
     while True:
-        redLed.value(0)
-        time.sleep(1)
         redLed.value(1)
-        greenLed.value(0)
         time.sleep(1)
+        redLed.value(0)
         greenLed.value(1)
+        time.sleep(1)
+        greenLed.value(0)
+        break
         
 elif moduleInput == 3:
     buzzer = PWM(Pin(16))
@@ -53,5 +54,3 @@ elif moduleInput == 4:
         LDRvalue = analogPin.read_u16()
         print(LDRvalue)
         time.sleep_ms(100)
-    
-    
