@@ -1,27 +1,29 @@
 from machine import Pin, ADC, PWM
+import ds1302
 import _thread
 import time
 
+def getTime(timeFormat): # Quickly takes the date or time from the DS1302 RTC
+    timestamp = rtc.date_time()
+    if timeFormat == "date":
+        eventDate = "-".join([str(timestamp[0])[-2:], str(timestamp[1]), str(timestamp[2])])
+        return eventDate
+    elif timeFormat == "time":
+        eventTime = ":".join([str(timestamp[4]), "0" + str(timestamp[5]) if timestamp[5] < 10 else str(timestamp[5])]) # Add a 0 before the number if it is before 10 (less than 2 digits)
+        return eventTime
+
 def logTime(logType): # Takes the type of time log and logs it
     if logType == "laserBlocked":
-        with open('LogFiles/DoorLog.txt', 'a') as DoorLog:
-            DoorLog.write(f"Door OPENED at {timestamp}\n")
+        with open(f'LogFiles/DoorLog{getTime("date")}.txt', 'a') as DoorLog: # Appends
+            DoorLog.write(f'Door OPENED at {getTime("time")}\n')
     elif logType == "laserClear":
-        with open('LogFiles/DoorLog.txt', 'a') as DoorLog:
-            DoorLog.write(f"Door CLOSED at {timestamp}\n")
+        with open(f'LogFiles/DoorLog{getTime("date")}.txt', 'a') as DoorLog: # Appends
+            DoorLog.write(f'Door CLOSED at {getTime("time")}\n')
     elif logType == "status":
-        with open('LogFiles/StatusLog.txt', 'w') as StatusLog:
-            StatusLog.write(f"{timestamp} OPERATIONAL")
-    elif logType == "shutdown":
-        with open('LogFiles/StatusLog.txt', 'w') as StatusLog:
-            StatusLog.write(f"{timestamp} AUTHORISED SHUTDOWN")
+        with open('LogFiles/StatusLog.txt', 'w') as StatusLog: # Writes
+            StatusLog.write(f'{getTime("time")} OPERATIONAL')
 
-def statusLogThread(): # Every 5 seconds it logs the status of the device, so I know when it was last on
-    with logLock:
-        logTime("status")
-    time.sleep(5)
-
-def turnOn(device, tone=None): # Turns on a device but first checks whether or not stopSystem is True. If it is, it will not turn anything on
+def turnOn(device, tone=None): # Turns on either laser or buzzer. The 'tone' positional parameter is not required to be satisfied, as its default is 'None'
     if device == "laserPin":
         laserPin.value(1)
     elif device == "buzzer":
@@ -35,43 +37,51 @@ def buzz(action): # Different buzzer noises for different scenarios
             time.sleep(0.5)
             buzzer.duty_u16(0)
             time.sleep(0.5)
-    elif action == "incorrectPassword":
-        turnOn("buzzer", 156) # Eb3
-        time.sleep(0.3)
-        buzzer.duty_u16(0)
-        turnOn("buzzer", 98) # G2
-        time.sleep(0.5)
-        buzzer.duty_u16(0)
 
+def statusLogThread(): # Every 5 seconds it logs the status of the device, so I know when my device was last on
+    while True:
+        with logLock:
+            logTime("status")
+        time.sleep(5)
 
 laserPin = Pin(16, Pin.OUT)
 lightDetector = ADC(Pin(26))
 buzzer = PWM(Pin(17))
-timestamp = None
+rtc = ds1302.DS1302(Pin(13), Pin(12), Pin(11))
 isLaserClear = True
 logLock = _thread.allocate_lock()
 buzzLock = _thread.allocate_lock()
 _thread.start_new_thread(statusLogThread, ())
 
-laserPin.value(1)
-time.sleep(0.5) # Time for the LDR to detect the laser
-while isLaserClear: # Technically I don't need to use isLaserClear as a condition, but it makes it easier to identify the loops
-    if lightDetector.read_u16() < 40000:
-        laserPin.value(0)
-        with logLock: # Log before buzzing because buzzing takes time and I need logging to be done at detection
-            logTime("laserBlocked")
-        with buzzLock:
-            buzz("doorAlarm")
-        isLaserClear = False
-    time.sleep_ms(20)
-        
-while not isLaserClear:
-    time.sleep(5)
-    turnOn("laserPin")
-    time.sleep(0.5)
-    if lightDetector.read_u16() < 40000:
-        laserPin.value(0)
-    else: # The laser will be kept on
-        with logLock:
-            logTime("laserClear")
-        isLaserClear = True
+try:
+    laserPin.value(1)
+    time.sleep(0.5) # Time for the LDR to detect the laser
+    while True:
+        while isLaserClear: # Technically I don't need to use isLaserClear as a condition, but it makes it easier to identify the loops
+            if lightDetector.read_u16() < 55000:
+                laserPin.value(0)
+                with logLock: # Log before buzzing because buzzing takes time and I need logging to be done at detection
+                    logTime("laserBlocked")
+                with buzzLock:
+                    buzz("doorAlarm")
+                isLaserClear = False
+            time.sleep_ms(20)
+                
+        while not isLaserClear:
+            time.sleep(5)
+            turnOn("laserPin")
+            time.sleep(0.5)
+            if lightDetector.read_u16() < 55000:
+                laserPin.value(0)
+            else: # The laser will be kept on
+                with logLock:
+                    logTime("laserClear")
+                isLaserClear = True
+finally:
+    laserPin.value(0)
+    buzzer.duty_u16(0)
+'''
+This finally clause turns off the laser and buzzer when the system is turned off normally.
+If I don't do this the GPIO or PWM pins will stay on.
+If the power is just ripped out instead then the pins will just automatically be set to off when it turns on again.
+'''
