@@ -15,6 +15,6 @@ print(dsRTC.date_time())
 time.sleep(1)
 print(dsRTC.date_time())
 
-eventDate = "-".join([str(timestamp[0])[-2:], str(timestamp[1]), str(timestamp[2])])
-eventTime = ":".join([str(timestamp[4]), str(timestamp[5])])
+eventDate = "-".join([str(dsRTC.day()), str(dsRTC.month()), str(dsRTC.year())[-2:]])
+eventTime = ":".join([str(dsRTC.hour()), "0" + str(dsRTC.minute()) if dsRTC.minute() < 10 else str(dsRTC.minute())])
 print(eventDate, eventTime)
