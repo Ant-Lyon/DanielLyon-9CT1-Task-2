@@ -4,12 +4,11 @@ import _thread
 import time
 
 def getTime(timeFormat): # Quickly takes the date or time from the DS1302 RTC
-    timestamp = rtc.date_time()
     if timeFormat == "date":
-        eventDate = "-".join([str(timestamp[0])[-2:], str(timestamp[1]), str(timestamp[2])])
+        eventDate = "-".join([str(rtc.day()), str(rtc.month()), str(rtc.year())[-2:]]) # DD-MM-YY
         return eventDate
     elif timeFormat == "time":
-        eventTime = ":".join([str(timestamp[4]), "0" + str(timestamp[5]) if timestamp[5] < 10 else str(timestamp[5])]) # Add a 0 before the number if it is before 10 (less than 2 digits)
+        eventTime = ":".join([str(rtc.hour()), "0" + str(rtc.minute()) if rtc.minute() < 10 else str(rtc.minute())]) # Add a 0 before the number if it is before 10 (less than 2 digits)
         return eventTime
 
 def logTime(logType): # Takes the type of time log and logs it
