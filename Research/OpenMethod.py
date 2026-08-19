@@ -5,7 +5,7 @@
 # 'as' is used to set a value to a variable whilst a special action is being preformed;
 # This is done because you cannot define a variable to something that is being affected by a 'with' clause;
 # Don't even try.
-with open('workfile.txt', "r", encoding="utf-8") as file: # "utf-8" is the standard for .txt files.
+with open('fileExample/workfile.txt', "r", encoding="utf-8") as file: # "utf-8" is the standard for .txt files.
     message = file.read()
     print(message)
 # Automatically closes the file. Don't ask me why exactly it does that SPECIFICALLY,
@@ -36,7 +36,7 @@ locale.getencoding() # Find your device's locale encoding (usually utf-8)
 
 # In micropython's 'open()' method, and the 'name' parameter stays an arg, but 'mode' becomes a kwarg;
 # The encoding kwarg does not exist on micropython.
-with open('workfile.txt', mode='r') as file:
+with open('fileExample/workfile.txt', mode='r') as file:
     print(file.read())
 
 # Fact: both CPython and Micropython's 'open()' method just alias 'io.open()', which is built into both languages.

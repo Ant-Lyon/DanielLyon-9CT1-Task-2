@@ -1,17 +1,4 @@
-# DanielLyon-9CT1-Task-2
+# Repository Navigation
+**Pico:** Pico files. Includes the RTC library, some calibration and testing files, then the main file titled 'mainProgram.py'.
 
-```lua
-local x = 10
-
-local function printSomething(sentence)
-    print(sentence)
-end
-
-if x > 5 then
-    printSomething(67)
-elseif x < 5 then
-    print("Brandon has no friends!")
-else
-    print(`Brandon has {x} friends`) -- string interpolation
-end
-```
+**Research:** Just some research for the 'open()' method and both the 'threading' and depreciated '_thread' libraries.

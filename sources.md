@@ -11,3 +11,5 @@ https://docs.python.org/3.5/library/_thread.html#module-_thread
 
 ## RTC DS1302 Driver
 https://github.com/omarbenhamid/micropython-ds1302-rtc/blob/master/README.md
+
+More about these are in the 'Research' folder in this repository. Except the RTC Driver, that's relatively simple.
