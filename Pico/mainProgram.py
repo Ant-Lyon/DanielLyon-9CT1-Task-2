@@ -48,6 +48,7 @@ lightDetector = ADC(Pin(26))
 buzzer = PWM(Pin(17))
 rtc = ds1302.DS1302(Pin(13), Pin(12), Pin(11))
 isLaserClear = True
+doorAlarm = False # Whether the door alarm was just played. Since it takes 3 seconds to play, the program will check if the laser is clear 3 seconds earlier on the first attempt
 logLock = _thread.allocate_lock()
 buzzLock = _thread.allocate_lock()
 _thread.start_new_thread(statusLogThread, ())
@@ -63,11 +64,16 @@ try:
                     logTime("laserBlocked")
                 with buzzLock:
                     buzz("doorAlarm")
+                    doorAlarm = True
                 isLaserClear = False
             time.sleep_ms(20)
                 
         while not isLaserClear:
-            time.sleep(5)
+            if doorAlarm:
+                time.sleep(2) # Checks if the laser is clear every 5 seconds
+                doorAlarm = False
+            else:
+                time.sleep(5)
             turnOn("laserPin")
             time.sleep(0.5)
             if lightDetector.read_u16() < 55000:
