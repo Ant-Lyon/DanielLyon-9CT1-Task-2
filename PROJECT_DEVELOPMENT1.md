@@ -146,7 +146,6 @@ Add your first attempt as a code window in your markdown documentation:
 eg: 
 
  ```Python 
-
 from machine import Pin, ADC, PWM
 import _thread
 import time
@@ -224,7 +223,6 @@ while not isLaserClear:
         with logLock:
             logTime("laserClear")
         isLaserClear = True
-
  ```
 
 
@@ -259,32 +257,21 @@ When we implemented this and tested it, when the laser was tripped, it instantly
 
 We needed a way to deal with somebody sabotaging the system and turning it off. So, every five seconds the time will be logged in a seperate .txt file, then five seconds later it will overwrite the previous (using 'w') so that if the system is turned off then the last time it was on will be logged. This means we can see who entered the bedroom at that time, and messed with the system. Overall no changed to our original idea for this one.
 
-### Final Product
-
-
-Film a video of your final product working. Include this in your Github repo if it fits, or submit separately to Google Classroom.
-
-Include all final Thonny / VS Code files and folder structure in your Github, all test cases in your documentation, and include all commits. 
-
 ### Final Evaluation
 
 #### Evaluate your Final Test in Relation to Functional Criteria
-The system successfully could detect with no error when the door was opened, and then closed and it could differentiate between these because when the door is opened the laser cannot reach the LDR. The buzzer worked very well, and the data logging process for the door was perfect. Instead of overwriting the time until the door is closed, it would append the time to a .txt file when it was opened AND closed with great accuracy and speed. Last minute, we made it so a new one of these doorLog files would be made, separated by the dates, so we have one for everyday so it doesn't get too big and lead to a doomscrolling session. The RTC we used, the DS1302 with a driver that was found on GitHub, worked very well. It kept the time accurately, and the driver made it very easy to read and write the time. Overall, for the functional parts the system was very successful.
+The system successfully could detect with no error when the door was opened, and then closed and it could differentiate between these because when the door is opened the laser cannot reach the LDR. The buzzer worked very well, and the data logging process for the door was perfect. Instead of overwriting the time until the door is closed, it would append the time to a .txt file when it was opened AND closed with great accuracy and speed. Last minute, we made it so a new one of these doorLog files would be made, separated by the dates, so we have one for everyday so it doesn't get too big and lead to a doomscrolling session. The status logger worked very well. Using the '_thread' library for MicroPython, it could successfully log the time every 5 seconds, overwriting itself when 5 seconds elapsed again. this meant we could easily know when the system was last turned off and find out who preformed the sabotage. This also improved the security of the system so people could know not to touch it. The RTC we used, the DS1302 with a driver that was found on GitHub, also worked very well. It kept the time accurately, and the driver made it very easy to read and write the time. Overall, for the functional parts the system was very successful.
 
 #### Evaluate your Final Test in Relation to Non-Functional Criteria
-The status logger worked very well. Using the '_thread' library for MicroPython, it could successfully log the time every 5 seconds, overwriting itself when 5 seconds elapsed again. this meant we could easily know when the system was last turned off and find out who preformed the sabotage. This also improved the security of the system so people could know not to touch it. 
-
-Other than that, however, we did not cover any of our non-functional criteria. This was not because of time, but of mere hardware capabilities. Initially, we designed with code a system where a thread checks whether buttons are pressed, and if the right combination is entered the system will go into a sleep mode. With this, a two-colour LED will be turned to red when the system is on and green when it is sleeping. However, when we wrote the code for this early on and used anothe breadboard for the buttons, the debugger threw a tantrum and said that "Core1 already in use." This meant that only one thread was possible to be used, so we had to make a decision. Either we keep this device shutdown system, or the status logger, and we chose to keep the status logger. We didn't even test the shutdown system after to see if it worked because there was no advantage and no one was curious whether it would, we just wanted to get the job done.
+The non-functional criteria was met to the full extent. As we said before, laser could differenciate the difference between the door opened and closed very well. This is because, again, when the door opens the tripwire is set off, and when it says that way the door blocks the laser. So, every five seconds when the laser turns on for half a second to check is the LDR picked up the light, if it doesn't pick it up then the door is opened, and if it does then it is closed. When we first turned on our program, we gave the LDR half a second to detect whether the laser is hitting it, same when we were doing the same to see of the door is closed again. However, when the tripwire is primed (door is closed), We give a delay of 20ms between checks, for maximum speed. The reason for this is because we want system to log when it is opened immediately, and at the start we give it a lot of time so that the system doesn't accidently go wrong. Like at the beginning we don't want it to immediately think the door is opened.
 
 #### Evaluate your Final Performance in Relation to the Identified Need
 Due to the success in meeting all the functional requirements with quality, our needs where absolutely met. The system could successfully log whenever the door was opened for closed, with the added security of the status logger. This means if, say, Daniel Lyon's sister comes into Daniel's room looking to plunder a hairbrush, the device will log when she came in and out, as well as hopefully invoke paranoia since she knows she is not slick. Then if she comes up with the bright idea to tamper with the system, it will log when she did it, leaving great evidence for an interrogation.
 
 #### Evaluate your Project in Relation to Project Management
-
+We managed time with our project well, only behind behind by about half a week at times. For the main file, we first researched what we need, being threads and the 'open()' method. We then worked on making sure the laser and the LDR worked somewhat well, then moved on to making the log for the door, and the status log using the '_thread' library. The whole time, the 'timestamp' variable was set to 'None', until we added the programming for the RTC, then configured the logs to fit the time. We then ran some tests to see the light level when the LDR was shone by the laser (60000), then calibrated the minimum light level required to set off the system (55000). Then we wired it up to a door and tested to see if the whole thing worked (which it did), and filmed it.
 
 #### Evaluate your Project in Relation to Peer Feedback.
 
 
-
 #### Justify Future Improvements you could make to your Final Product
-
