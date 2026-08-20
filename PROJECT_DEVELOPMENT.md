@@ -19,54 +19,27 @@ An open loop security system shines a laser into a light detector triggering a b
 ### Functional Requirements
 The functional requirements for my security system list the key actions the mechanism needs to follow to detect intrusions and record important information:
  
-Buzzer Output - The system needs to activate a buzzer the exact moment the laser beam is broken and the light detector is triggered to alert the user that someone has entered the room. This will hopefully invoke paranoia as they know I have detected them.
+**Buzzer Output** - The system needs to activate a buzzer the exact moment the laser beam is broken and the light detector is triggered to alert the user that someone has entered the room. This will hopefully invoke paranoia as they know I have detected them.
 
-Memory System Process - Every minute the system should delete the last time that was stored and replace it with a new one so the memory always stays updated. 
+**Memory System Process** - Every minute the system should delete the last time that was stored and replace it with a new one so the memory always stays updated. 
 
-Time Logging Process - It must record and log the time the person leaves the room so the user knows exactly when the intruder left.
+**Time Logging Process** - It must record and log the time the person leaves the room so the user knows exactly when the intruder left.
 
-Data Storing Process -  If system is switched off it must retain the very last time it was active so the user can be notified.
-
-
-### Test Cases
-#### Buzzer Output:
-| Test Case | Input     | Expected Output   |
-|---------- |---------- |----------------   |
-| Laser beam untouched | Light detector continuously recieves the laser light | System waits and does not trigger the buzzer |
-| Intruder enters room | Laser beam is broken; light detector is triggered | Buzzer activates instantly to alert user. |
-
-#### Time Logging Process:
-| Test Case | Input     | Expected Output   |
-|---------- |---------- |----------------   |
-| Intruder inside room | Laser beam stays broken while person is inside | System waits and does not log a final time yet |
-| Intruder leaves room | Laser beam is restored; light detector recieves light again | System captures the exact current time as the final time. |
-
-#### Memory System Process:
-| Test Case | Input     | Expected Output   |
-|---------- |---------- |----------------   |
-| Intruder inside room | Laser beam stays broken as time passes | System overwrites the previous time; replaces it with the current time in the memory |
-| Intruder leaves room | Laser beam is restored | System stops deleting, retains the final exit time and saves it. |
-
-#### Data Storing Process:
-| Test Case | Input     | Expected Output   |
-|---------- |---------- |----------------   |
-| System is turned off | Cables and wires are disconnected or switches are turned off | System completely shuts down, but the final time is kept safe in the memory variable |
-| System is turned back on | Cables and wires are connected and switches are turned on | System powers up and successfully displays the final time before the shutdown. |
-
+**Data Storing Process** -  If system is switched off it must retain the very last time it was active so the user can be notified.
 
 ### Non-Functional Requirements
 The non-functional requirements for my security system list the performance expectations, speed, and accuracy the mechanism must sustain to achieve it's goal of running effectively and being reliable:
 
-Efficiency - The system must run smoothly so that updating the memory every minute doesnt slow down/freeze the device.
+**Efficiency** - The system must run smoothly so that updating the memory every minute doesnt slow down/freeze the device.
 
-Response Time - The buzzer must work within 0.5 seconds of the laser beam being broken so the intruder is alerted instantly.
+**Response Time** - The buzzer must work within 0.5 seconds of the laser beam being broken so the intruder is alerted instantly.
 
-Accuracy - The light detector must have 100% accuracy in distinguishing between the laser light and a normal bedroom light so it never starts a false alarm.
+**Accuracy** - The light detector must have 100% accuracy in distinguishing between the laser light and a normal bedroom light so it never starts a false alarm.
 
 ## Algorithms
 
 ### Flowchart (Two Subroutines and Mainline Routine)
-![alt text](Flowchart.png)
+![Flowchart](flowchart.png)
 
 ### Psuedocode
 START
@@ -132,16 +105,12 @@ Start Intrusion_logging()
 
 END Intrusion_logging
 
-
-
-
 ## Development and Integration
-
 
 Add your first attempt as a code window in your markdown documentation:
 eg: 
 
- ```Python 
+```Python 
 from machine import Pin, ADC, PWM
 import _thread
 import time
@@ -219,8 +188,7 @@ while not isLaserClear:
         with logLock:
             logTime("laserClear")
         isLaserClear = True
- ```
-
+```
 
 ## Testing and Debugging
 
