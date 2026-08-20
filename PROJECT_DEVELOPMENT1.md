@@ -19,7 +19,7 @@ An open loop security system shines a laser into a light detector triggering a b
 ### Functional Requirements
 The functional requirements for my security system list the key actions the mechanism needs to follow to detect intrusions and record important information:
  
-Buzzer Output - The system needs to activate a buzzer the exact moment the laser beam is broken and the light detector is triggered to alert the user that someone has entered the room.
+Buzzer Output - The system needs to activate a buzzer the exact moment the laser beam is broken and the light detector is triggered to alert the user that someone has entered the room. This will hopefully invoke paranoia as they know I have detected them.
 
 Memory System Process - Every minute the system should delete the last time that was stored and replace it with a new one so the memory always stays updated. 
 
@@ -147,7 +147,83 @@ eg:
 
  ```Python 
 
-#Enter code here
+from machine import Pin, ADC, PWM
+import _thread
+import time
+
+def logTime(logType): # Takes the type of time log and logs it
+    if logType == "laserBlocked":
+        with open('LogFiles/DoorLog.txt', 'a') as DoorLog:
+            DoorLog.write(f"Door OPENED at {timestamp}\n")
+    elif logType == "laserClear":
+        with open('LogFiles/DoorLog.txt', 'a') as DoorLog:
+            DoorLog.write(f"Door CLOSED at {timestamp}\n")
+    elif logType == "status":
+        with open('LogFiles/StatusLog.txt', 'w') as StatusLog:
+            StatusLog.write(f"{timestamp} OPERATIONAL")
+    elif logType == "shutdown":
+        with open('LogFiles/StatusLog.txt', 'w') as StatusLog:
+            StatusLog.write(f"{timestamp} AUTHORISED SHUTDOWN")
+
+def statusLogThread(): # Every 5 seconds it logs the status of the device, so I know when it was last on
+    with logLock:
+        logTime("status")
+    time.sleep(5)
+
+def turnOn(device, tone=None): # Turns on a device but first checks whether or not stopSystem is True. If it is, it will not turn anything on
+    if device == "laserPin":
+        laserPin.value(1)
+    elif device == "buzzer":
+        buzzer.freq(tone)
+        buzzer.duty_u16(32728) # A 50% duty cycle makes the buzzer produce sound symmetrically, making it as loud, clear, and efficent as possible
+
+def buzz(action): # Different buzzer noises for different scenarios
+    if action == "doorAlarm":
+        for i in range(3):
+            turnOn("buzzer", 440) # A4
+            time.sleep(0.5)
+            buzzer.duty_u16(0)
+            time.sleep(0.5)
+    elif action == "incorrectPassword":
+        turnOn("buzzer", 156) # Eb3
+        time.sleep(0.3)
+        buzzer.duty_u16(0)
+        turnOn("buzzer", 98) # G2
+        time.sleep(0.5)
+        buzzer.duty_u16(0)
+
+
+laserPin = Pin(16, Pin.OUT)
+lightDetector = ADC(Pin(26))
+buzzer = PWM(Pin(17))
+timestamp = None
+isLaserClear = True
+logLock = _thread.allocate_lock()
+buzzLock = _thread.allocate_lock()
+_thread.start_new_thread(statusLogThread, ())
+
+laserPin.value(1)
+time.sleep(0.5) # Time for the LDR to detect the laser
+while isLaserClear: # Technically I don't need to use isLaserClear as a condition, but it makes it easier to identify the loops
+    if lightDetector.read_u16() < 40000:
+        laserPin.value(0)
+        with logLock: # Log before buzzing because buzzing takes time and I need logging to be done at detection
+            logTime("laserBlocked")
+        with buzzLock:
+            buzz("doorAlarm")
+        isLaserClear = False
+    time.sleep_ms(20)
+        
+while not isLaserClear:
+    time.sleep(5)
+    turnOn("laserPin")
+    time.sleep(0.5)
+    if lightDetector.read_u16() < 40000:
+        laserPin.value(0)
+    else: # The laser will be kept on
+        with logLock:
+            logTime("laserClear")
+        isLaserClear = True
 
  ```
 
@@ -161,7 +237,7 @@ eg:
 | Laser beam untouched | Light detector continuously recieves the laser light | System waits and does not trigger the buzzer     |
 | Intruder enters rooms | Laser beam is broken; light detector is triggered | Buzzer activates instantly to alert user. |
 
-This worked very well, but only when I used a 10 K olm resistor for my voltage divider. We don't really know why it works except that a ratio is made by the two resistors, but Daniel Lyon's Dad wwho is an electrican said you don't need to know exactly HOW it works, just that it does, and how use it. The 10 K olm resistor meant we had the maximum u16 range, with at dark light levels averaged 1500 but with the laser shining into it at around 60000. Suprisingly, even in dark and very bright areas when the laser shone at the LDR the voltage would be 60000, then in light areas drop to around 50000. This made us toggle the system so that when the LDR detectors a light level of under 55000, it will detect.
+This worked very well, but only when I used a 10 K olm resistor for my voltage divider. We don't really know why it works except that a ratio is made by the two resistors, but Daniel Lyon's Dad who is an electrican said you don't need to know exactly HOW it works, just that it does, and how use it. The 10 K olm resistor meant we had the maximum u16 range, with at dark light levels averaged 1500 but with the laser shining into it at around 60000. Suprisingly, even in dark and very bright areas when the laser shone at the LDR the voltage would be 60000, then in light areas drop to around 50000. This made us toggle the system so that when the LDR detectors a light level of under 55000, it will detect.
 
 The green buzzer broke, so we used Brandon's but then his broke. Rachael then told us to use the passive buzzer from Daniel's engineering kit, so we used that. We first tested the frequency of 440 (A note, octave 4), and liked it so stuck with it.
 
@@ -171,27 +247,17 @@ The green buzzer broke, so we used Brandon's but then his broke. Rachael then to
 | Intruder inside room | Laser beam stays broken while person is inside | System waits and does not log a final time yet |
 | Intruder leaves room | Laser beam is restored; light detector recieves light again | System captures the exact current time as the final time. |
 
-This worked very well, but only when we used a 10 K olm resistor for my voltage divider. We don't really know why it works except that a ratio is made by the two resistors, but Daniel Lyon's Dad who is an electrican said you don't need to know exactly HOW it works, just that it does, and how use it. The 10 K olm resistor meant we had the maximum u16 range, with at dark light levels averaged 1500 but with the laser shining into it at around 60000. Suprisingly, even in dark and very bright areas when the laser shone at the LDR the voltage would be 60000, then in light areas drop to around 50000. This made us toggle the system so that when the LDR detectors a light level of under 55000, it will detect.
-
 When the time is logged you only know when the person closed the door, because the time overrights every minute until the LDR detectors light again. This means we don't know when they came into the room, only when they left, or even just went they closed the door presuming they did. Furthermore, the system is then limited to one log, because if they come inside again you only see the last time the door was closed. So to fix these issues, instead of overwriting the file with the 'w' tuple in the 'open()' method, we replaced it with the 'a' argument instead. In addition, we made it so the time logs when the door was opened. Once the door is opened, every five seconds the laser will shine (or 2 seconds if the buzzer was just activated, which takes 3 seconds), wait 0.5 seconds are the LDR to detect, and if the LDR does it will stay on and wait for the door to be opened again. As well as this, in the same .txt file it will log the time the door is closed. This means you have a good idea of when the door is opened, and when perhaps it was closed again.
 
-#### Memory System Process:
-| Test Case | Input     | Expected Output   |
-|---------- |---------- |----------------   |
-| Intruder inside room | Laser beam stays broken as time passes | System overwrites the previous time; replaces it with the current time in the memory |
-| Intruder leaves room | Laser beam is restored | System stops deleting, retains the final exit time and saves it. |
+When we implemented this and tested it, when the laser was tripped, it instantly turned off, appended a log, then after 5 seconds shone are half a second then turned off again, unless the door was closed again and the LDR detected the light, making it stay on and finally logging when the door was closed. So no, this test case failed, not because of faulty code but a turn to a better idea, so we never tested it.
 
-We needed a way to deal with somebody sabotaging the system and turning it off. So, every five seconds the time will be logged, then five seconds later it will overwrite the previous
-
-#### Data Storing Process:
+#### Status Logging Process:
 | Test Case | Input     | Expected Output   |
 |---------- |---------- |----------------   |
 | System is turned off | Cables and wires are disconnected or switches are turned off | System completely shuts down, but the final time is kept safe in the memory variable |
 | System is turned back on | Cables and wires are connected and switches are turned on | System powers up and successfully displays the final time before the shutdown. |
 
-
-WRITE A PARAGRAPH EVALUATING
-
+We needed a way to deal with somebody sabotaging the system and turning it off. So, every five seconds the time will be logged in a seperate .txt file, then five seconds later it will overwrite the previous (using 'w') so that if the system is turned off then the last time it was on will be logged. This means we can see who entered the bedroom at that time, and messed with the system. Overall no changed to our original idea for this one.
 
 ### Final Product
 
@@ -199,3 +265,26 @@ WRITE A PARAGRAPH EVALUATING
 Film a video of your final product working. Include this in your Github repo if it fits, or submit separately to Google Classroom.
 
 Include all final Thonny / VS Code files and folder structure in your Github, all test cases in your documentation, and include all commits. 
+
+### Final Evaluation
+
+#### Evaluate your Final Test in Relation to Functional Criteria
+The system successfully could detect with no error when the door was opened, and then closed and it could differentiate between these because when the door is opened the laser cannot reach the LDR. The buzzer worked very well, and the data logging process for the door was perfect. Instead of overwriting the time until the door is closed, it would append the time to a .txt file when it was opened AND closed with great accuracy and speed. Last minute, we made it so a new one of these doorLog files would be made, separated by the dates, so we have one for everyday so it doesn't get too big and lead to a doomscrolling session. The RTC we used, the DS1302 with a driver that was found on GitHub, worked very well. It kept the time accurately, and the driver made it very easy to read and write the time. Overall, for the functional parts the system was very successful.
+
+#### Evaluate your Final Test in Relation to Non-Functional Criteria
+The status logger worked very well. Using the '_thread' library for MicroPython, it could successfully log the time every 5 seconds, overwriting itself when 5 seconds elapsed again. this meant we could easily know when the system was last turned off and find out who preformed the sabotage. This also improved the security of the system so people could know not to touch it. 
+
+Other than that, however, we did not cover any of our non-functional criteria. This was not because of time, but of mere hardware capabilities. Initially, we designed with code a system where a thread checks whether buttons are pressed, and if the right combination is entered the system will go into a sleep mode. With this, a two-colour LED will be turned to red when the system is on and green when it is sleeping. However, when we wrote the code for this early on and used anothe breadboard for the buttons, the debugger threw a tantrum and said that "Core1 already in use." This meant that only one thread was possible to be used, so we had to make a decision. Either we keep this device shutdown system, or the status logger, and we chose to keep the status logger. We didn't even test the shutdown system after to see if it worked because there was no advantage and no one was curious whether it would, we just wanted to get the job done.
+
+#### Evaluate your Final Performance in Relation to the Identified Need
+Due to the success in meeting all the functional requirements with quality, our needs where absolutely met. The system could successfully log whenever the door was opened for closed, with the added security of the status logger. This means if, say, Daniel Lyon's sister comes into Daniel's room looking to plunder a hairbrush, the device will log when she came in and out, as well as hopefully invoke paranoia since she knows she is not slick. Then if she comes up with the bright idea to tamper with the system, it will log when she did it, leaving great evidence for an interrogation.
+
+#### Evaluate your Project in Relation to Project Management
+
+
+#### Evaluate your Project in Relation to Peer Feedback.
+
+
+
+#### Justify Future Improvements you could make to your Final Product
+
